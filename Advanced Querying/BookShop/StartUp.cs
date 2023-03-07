@@ -2,6 +2,7 @@
 
 namespace BookShop
 {
+    using BookShop.Models;
     using Data;
     using System.Globalization;
 
@@ -218,6 +219,116 @@ namespace BookShop
             return books; //$"There are {books} books with longer title than {lengthCheck} symbols";
         }
 
+
+        //12. Total Book Copies
+            public static string CountCopiesByAuthor(BookShopContext dbContext)
+        {
+            StringBuilder sb = new StringBuilder();
+            var authorsWithBookCopies = dbContext.Authors
+                .Select(a => new
+                {
+                    FullName = a.FirstName + " " + a.LastName,
+                    TotalCopies = a.Books
+                        .Sum(b => b.Copies)
+                })
+                .ToArray()
+                .OrderByDescending(b => b.TotalCopies); // This is optimization
+
+            foreach (var a in authorsWithBookCopies)
+            {
+                sb.AppendLine($"{a.FullName} - {a.TotalCopies}");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        // 13. Profit by Category
+        public static string GetTotalProfitByCategory(BookShopContext dbContext)
+        {
+            StringBuilder sb = new StringBuilder();
+            var categoriesWithProfit = dbContext.Categories
+                .Select(c => new
+                {
+                    CategoryName = c.Name,
+                    TotalProfit = c.CategoryBooks
+                        .Sum(cb => cb.Book.Copies * cb.Book.Price)
+                })
+                .ToArray()
+                .OrderByDescending(c => c.TotalProfit)
+                .ThenBy(c => c.CategoryName);
+
+            foreach (var c in categoriesWithProfit)
+            {
+                sb.AppendLine($"{c.CategoryName} ${c.TotalProfit:f2}");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+
+        // 14. Most Recent Books
+        public static string GetMostRecentBooks(BookShopContext dbContext)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            var categoriesWithMostRecentBooks = dbContext.Categories
+                .OrderBy(c => c.Name)
+                .Select(c => new
+                {
+                    CategoryName = c.Name,
+                    MostRecentBooks = c.CategoryBooks
+                        .OrderByDescending(cb => cb.Book.ReleaseDate)
+                        .Take(3) // This can lower network load
+                        .Select(cb => new
+                        {
+                            BookTitle = cb.Book.Title,
+                            ReleaseYear = cb.Book.ReleaseDate.Value.Year
+                        })
+                        .ToArray()
+                })
+                .ToArray();
+
+            foreach (var c in categoriesWithMostRecentBooks)
+            {
+                sb.AppendLine($"--{c.CategoryName}");
+
+                foreach (var b in c.MostRecentBooks/*.Take(3) This is lowering query complexity*/)
+                {
+                    sb.AppendLine($"{b.BookTitle} ({b.ReleaseYear})");
+                }
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+
+        // 15. Increase Prices
+        public static void IncreasePrices(BookShopContext context)
+        {
+            // Materializing the query does not detach entities from Change Tracker
+            Book[] bookReleasedBefore2010 = context
+                .Books
+                .Where(b => b.ReleaseDate.HasValue &&
+                            b.ReleaseDate.Value.Year < 2010)
+                .ToArray();
+
+            // Using BatchUpdate from EFCore.Extensions
+            //dbContext
+            //    .Books
+            //    .Where(b => b.ReleaseDate.HasValue &&
+            //                b.ReleaseDate.Value.Year < 2010)
+            //    .UpdateFromQuery(b => new Book() { Price = b.Price + 5 });
+
+            foreach (var book in bookReleasedBefore2010)
+            {
+                book.Price += 5;
+            }
+
+            // Using SaveChanges() -> 4544ms
+            // Using BulkUpdate() -> 3677ms
+            context.SaveChanges();
+     
+   }
 
 
         //16. Remove Books
