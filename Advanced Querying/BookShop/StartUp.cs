@@ -13,12 +13,15 @@ namespace BookShop
             using var db = new BookShopContext();
             //DbInitializer.ResetDatabase(db);
 
-            string command = Console.ReadLine().ToLower();
-            string result = GetBooksByAgeRestriction(db, command);
-            Console.WriteLine(result);
+            //string command = Console.ReadLine().ToLower().TrimEnd();
+            //string result = GetBooksByAgeRestriction(db, command);
+            //Console.WriteLine(result);
 
+            string res = GetGoldenBooks(db);
+            Console.WriteLine(res);
         }
 
+        //02. Age Restriction 
         public static string GetBooksByAgeRestriction(BookShopContext context, string command)
         {
             StringBuilder sb = new StringBuilder();
@@ -49,6 +52,29 @@ namespace BookShop
 
             return sb.ToString().TrimEnd();
         }
+
+        //03. Golden Books 
+        public static string GetGoldenBooks(BookShopContext context)
+        {
+            var books = context.Books
+                .Where(b => (int)b.EditionType == 2)
+                .Where(b => b.Copies < 5000)
+                .OrderBy(b => b.BookId)
+                .Select(b => new
+                {
+                    title = b.Title
+                })
+                .ToArray();
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var book in books)
+            {
+                sb.AppendLine(book.title);
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
     }
 }
 
