@@ -12,8 +12,8 @@ namespace BookShop
             using var db = new BookShopContext();
             //DbInitializer.ResetDatabase(db);
 
-            string strInput = Console.ReadLine();
-            string res = GetBookTitlesContaining(db, strInput);
+            int booksCount = int.Parse(Console.ReadLine());
+            int res = CountBooks(db, booksCount);
             Console.WriteLine(res);
 
         }
@@ -193,6 +193,46 @@ namespace BookShop
                 .ToArray();
 
             return string.Join(Environment.NewLine, books).TrimEnd();
+        }
+
+        //10.Book Search by Author
+        public static string GetBooksByAuthor(BookShopContext context, string input)
+        {
+            var books = context.Books
+                .Where(b => b.Author.LastName.ToLower().StartsWith(input.ToLower()))
+                .OrderBy(b => b.BookId)
+                .Select(b => $"{b.Title} ({b.Author.FirstName} {b.Author.LastName})")
+                .ToArray();
+
+            return string.Join(Environment.NewLine, books);
+        }
+
+        //11. Count Books 
+        public static int CountBooks(BookShopContext context, int lengthCheck)
+        {
+            var books = context.Books
+                .Where(b => b.Title.Length > lengthCheck)
+                .ToArray()
+                .Count();
+
+            return books; //$"There are {books} books with longer title than {lengthCheck} symbols";
+        }
+
+
+
+        //16. Remove Books
+        public static int RemoveBooks(BookShopContext context, int lessThanCopies = 4200)
+        {
+            var books = context.Books
+                .Where(b => b.Copies < lessThanCopies)
+                .ToArray();
+
+            var removedBooks = books.Length;
+
+            context.Books.RemoveRange(books);
+            context.SaveChanges();
+
+            return removedBooks;
         }
     }
 }
