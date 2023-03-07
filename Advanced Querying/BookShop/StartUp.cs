@@ -12,14 +12,10 @@ namespace BookShop
             using var db = new BookShopContext();
             //DbInitializer.ResetDatabase(db);
 
-            //string command = Console.ReadLine().ToLower().TrimEnd();
-            //string result = GetBooksByAgeRestriction(db, command);
-            //Console.WriteLine(result);
-
-
-            string date = Console.ReadLine();
-            string res = GetBooksReleasedBefore(db, date);
+            string strInput = Console.ReadLine();
+            string res = GetBookTitlesContaining(db, strInput);
             Console.WriteLine(res);
+
         }
 
         //02. Age Restriction 
@@ -163,7 +159,41 @@ namespace BookShop
             return sb.ToString().TrimEnd();
         }
 
+        //08. Author Search
+        public static string GetAuthorNamesEndingIn(BookShopContext context, string input)
+        {
+            int requiredLenghtOfSubstring = input.Length;
 
+            var authors = context.Authors
+                .Where(a => 
+                    a.FirstName.Substring((a.FirstName.Length - requiredLenghtOfSubstring)) == input)
+                .OrderBy(a => a.FirstName + " " + a.LastName)
+                .Select(a => new
+                {
+                    Name = a.FirstName + " " + a.LastName
+                })
+                .ToArray();
+
+            var sb = new StringBuilder();
+            foreach (var author in authors)
+            {
+                sb.AppendLine(author.Name);
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        //09. Book Search
+        public static string GetBookTitlesContaining(BookShopContext context, string input)
+        {
+            string[] books = context.Books
+                .Where(b => b.Title.ToLower().Contains(input.ToLower()))
+                .OrderBy(b => b.Title)
+                .Select(b => b.Title)
+                .ToArray();
+
+            return string.Join(Environment.NewLine, books).TrimEnd();
+        }
     }
 }
 
