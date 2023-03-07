@@ -1,10 +1,9 @@
-﻿using System.Linq.Expressions;
-using System.Text;
+﻿using System.Text;
 
 namespace BookShop
 {
     using Data;
-    using Initializer;
+    using System.Globalization;
 
     public class StartUp
     {
@@ -17,7 +16,9 @@ namespace BookShop
             //string result = GetBooksByAgeRestriction(db, command);
             //Console.WriteLine(result);
 
-            string res = GetGoldenBooks(db);
+
+            string date = Console.ReadLine();
+            string res = GetBooksReleasedBefore(db, date);
             Console.WriteLine(res);
         }
 
@@ -40,7 +41,7 @@ namespace BookShop
                 .Where(b => (int)b.AgeRestriction == groupId)
                 .Select(b => new
                 {
-                   title = b.Title
+                    title = b.Title
                 })
                 .OrderBy(b => b.title)
                 .ToArray();
@@ -74,6 +75,94 @@ namespace BookShop
 
             return sb.ToString().TrimEnd();
         }
+
+        //04. Books by Price
+        public static string GetBooksByPrice(BookShopContext context)
+        {
+            var books = context.Books
+                .Where(b => b.Price > 40)
+                .OrderByDescending(b => b.Price)
+                .Select(b => new
+                {
+                    b.Title,
+                    Price = b.Price.ToString("F2")
+                })
+                .ToArray();
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var book in books)
+            {
+                sb.AppendLine($"{book.Title} - ${book.Price}");
+            }
+            return sb.ToString().TrimEnd();
+        }
+
+        //05. Not Released In 
+        public static string GetBooksNotReleasedIn(BookShopContext context, int year)
+        {
+            var books = context.Books
+                .Where(b => ((DateTime)(b.ReleaseDate!)).Year != year)
+                .OrderBy(b => b.BookId)
+                .Select(b => new
+                {
+                    b.Title
+                })
+                .ToArray();
+
+            var sb = new StringBuilder();
+            foreach (var book in books)
+            {
+                sb.AppendLine(book.Title);
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        //06. Book Titles by Category 
+        public static string GetBooksByCategory(BookShopContext dbContext, string input)
+        {
+            // In-memory, we are still not approaching the DB
+            string[] categories = input
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(c => c.ToLower())
+                .ToArray();
+
+            string[] bookTitles = dbContext.Books
+                .Where(b => b.BookCategories
+                                .Any(bc => categories.Contains(bc.Category.Name.ToLower())))
+                .OrderBy(b => b.Title)
+                .Select(b => b.Title)
+                .ToArray();
+
+            return string.Join(Environment.NewLine, bookTitles);
+        }
+
+        //07. Released Before Date
+        public static string GetBooksReleasedBefore(BookShopContext context, string date)
+        {
+            DateTime convertedDate = DateTime.ParseExact(date, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+            var books = context.Books
+                .Where(b => b.ReleaseDate < convertedDate)
+                .OrderByDescending(b => b.ReleaseDate)
+                .Select(b => new
+                {
+                    b.Title,
+                    b.EditionType,
+                    Price = b.Price.ToString("F2")
+                })
+                .ToArray();
+
+
+            var sb = new StringBuilder();
+            foreach (var book in books)
+            {
+                sb.AppendLine($"{book.Title} - {book.EditionType} - ${book.Price}");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
 
     }
 }
