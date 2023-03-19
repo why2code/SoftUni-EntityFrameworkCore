@@ -4,7 +4,7 @@ namespace ProductShop
 {
     public class ProductShopProfile : Profile
     {
-        public ProductShopProfile() 
+        public ProductShopProfile()
         {
         }
     }

@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ProductShop.Models;
-namespace ProductShop.Data
+﻿namespace ProductShop.Data
 {
+    using Microsoft.EntityFrameworkCore;
+
+    using Models;
+
     public class ProductShopContext : DbContext
     {
         public ProductShopContext()
@@ -14,20 +16,15 @@ namespace ProductShop.Data
         }
 
         public DbSet<Category> Categories { get; set; }
-
         public DbSet<Product> Products { get; set; }
-
         public DbSet<User> Users { get; set; }
-
-        public DbSet<CategoryProduct> CategoriesProducts { get; set; }
-
+        public DbSet<CategoryProduct> CategoryProducts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder
-                    .UseSqlServer(Configuration.ConnectionString);
+                optionsBuilder.UseSqlServer(Configuration.ConnectionString);
             }
         }
 
@@ -35,7 +32,7 @@ namespace ProductShop.Data
         {
             modelBuilder.Entity<CategoryProduct>(entity =>
             {
-                entity.HasKey(x => new { x.CategoryId, x.ProductId });
+                entity.HasKey(x => new { x.CategoryId, x.ProductId});
             });
 
             modelBuilder.Entity<User>(entity =>

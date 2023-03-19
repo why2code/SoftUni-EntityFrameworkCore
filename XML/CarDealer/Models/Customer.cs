@@ -2,6 +2,11 @@
 {
     public class Customer
     {
+        public Customer()
+        {
+            this.Sales = new HashSet<Sale>();
+        }
+
         public int Id { get; set; }
 
         public string Name { get; set; } = null!;
@@ -10,6 +15,6 @@
 
         public bool IsYoungDriver { get; set; }
 
-        public ICollection<Sale> Sales { get; set; } = new List<Sale>(); 
+        public virtual ICollection<Sale> Sales { get; set; }
     }
 }
