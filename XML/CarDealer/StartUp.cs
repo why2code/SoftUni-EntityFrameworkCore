@@ -4,11 +4,10 @@ namespace CarDealer
 {
     using AutoMapper;
     using AutoMapper.QueryableExtensions;
-
     using Data;
+    using DTOs.Export;
     using DTOs.Import;
     using Models;
-    using DTOs.Export;
     using Utilities;
 
     public class StartUp
@@ -18,22 +17,17 @@ namespace CarDealer
             // Analogue to JsonConvert
             // Provide us with Serialize, Deserialize methods
             // XmlSerializer
-            using CarDealerContext context = new CarDealerContext();
-            //string inputXml =
-            //    File.ReadAllText("../../../Datasets/parts.xml");
 
-            string result = GetTotalSalesByCustomer(context);
+            using CarDealerContext context = new CarDealerContext();
+
+            //string inputXml =
+            //    File.ReadAllText("../../../Datasets/sales.xml");
+            //string result = ImportSales(context, inputXml);
+
+            string result = GetSalesWithAppliedDiscount(context);
             Console.WriteLine(result);
 
-            // Old way in EF Core
-            //context.Cars
-            //    .Include(c => c.PartsCars)
-            //    .ThenInclude(cp => cp.Part)
-            //    .ThenInclude(p => p.Supplier)
-            
-            // New way in EF 6
-            //context.Cars
-            //    .Include(c => c.PartsCars.Select(cp => cp.Part))
+           
         }
 
         // Problem 09
@@ -43,7 +37,7 @@ namespace CarDealer
             XmlHelper xmlHelper = new XmlHelper();
             ImportSupplierDto[] supplierDtos =
                 xmlHelper.Deserialize<ImportSupplierDto[]>(inputXml, "Suppliers");
-            
+
             // The second method is just syntax sugar
             // It is written for user experience
             //ImportSupplierDto[] supplierDtos2 =
@@ -66,7 +60,7 @@ namespace CarDealer
                 //    IsImporter = supplierDto.IsImporter
                 //};
                 Supplier supplier = mapper.Map<Supplier>(supplierDto);
-                
+
                 validSuppliers.Add(supplier);
             }
 
@@ -122,14 +116,14 @@ namespace CarDealer
             ICollection<Car> validCars = new HashSet<Car>();
             foreach (ImportCarDto carDto in carDtos)
             {
-                if (string.IsNullOrEmpty(carDto.Make) || 
+                if (string.IsNullOrEmpty(carDto.Make) ||
                     string.IsNullOrEmpty(carDto.Model))
                 {
                     continue;
                 }
 
                 Car car = mapper.Map<Car>(carDto);
-                
+
                 foreach (var partDto in carDto.Parts.DistinctBy(p => p.PartId))
                 {
                     if (!context.Parts.Any(p => p.Id == partDto.PartId))
@@ -143,7 +137,7 @@ namespace CarDealer
                     };
                     car.PartsCars.Add(carPart);
                 }
-                
+
                 validCars.Add(car);
             }
 
@@ -165,7 +159,7 @@ namespace CarDealer
             ICollection<Customer> validCustomers = new HashSet<Customer>();
             foreach (ImportCustomerDto customerDto in customerDtos)
             {
-                if (string.IsNullOrEmpty(customerDto.Name) || 
+                if (string.IsNullOrEmpty(customerDto.Name) ||
                     string.IsNullOrEmpty(customerDto.BirthDate))
                 {
                     continue;
@@ -198,7 +192,7 @@ namespace CarDealer
             ICollection<Sale> validSales = new HashSet<Sale>();
             foreach (ImportSaleDto saleDto in saleDtos)
             {
-                if (!saleDto.CarId.HasValue || 
+                if (!saleDto.CarId.HasValue ||
                     dbCarIds.All(id => id != saleDto.CarId.Value))
                 {
                     continue;
@@ -286,23 +280,60 @@ namespace CarDealer
             XmlHelper xmlHelper = new XmlHelper();
 
             var customers = context.Customers
-                .Where(c => c.Sales.Count >= 1)
-                .Select(s => new ExportCustomerTotalSalesDTO()
+                .Where(c => c.Sales.Any())
+                .Select(c => new
                 {
-                    FullName = s.Name,
-                    BoughtCars = s.Sales.Count,
-                    SpentMoney = s.Sales.Sum(s => s.Car.PartsCars.Sum(pc => pc.Part.Price))
+                    FullName = c.Name,
+                    BoughtCars = c.Sales.Count(),
+                    SalesInfo = c.Sales.Select(s => new
+                    {
+                        Prices = c.IsYoungDriver
+                            ? s.Car.PartsCars.Sum(p => Math.Round((double)p.Part.Price * 0.95, 2))
+                            : s.Car.PartsCars.Sum(p => (double)p.Part.Price)
+                    }).ToArray(),
                 })
-                .OrderByDescending(o => o.SpentMoney)
-                .ToList();
-            
-              //SpentMoney = s.Sales.Sum(s => s.Car.PartsCars.Sum(pc => pc.Part.Price))
-            
-            return xmlHelper.Serialize(customers, "customers");
+                .ToArray();
+
+
+            ExportCustomerTotalSalesDTO[] totalSalesDtos = customers
+                .OrderByDescending(t => t.SalesInfo.Sum(s => s.Prices))
+                .Select(t => new ExportCustomerTotalSalesDTO()
+                {
+                    FullName = t.FullName,
+                    BoughtCars = t.BoughtCars,
+                    SpentMoney = (t.SalesInfo.Sum(s => s.Prices)).ToString("f2")
+                })
+                .ToArray();
+
+            //SpentMoney = s.Sales.Sum(s => s.Car.PartsCars.Sum(pc => pc.Part.Price))
+
+            return xmlHelper.Serialize(totalSalesDtos, "customers");
         }
 
         // Problem 19
+        public static string GetSalesWithAppliedDiscount(CarDealerContext context)
+        {
+            XmlHelper xmlHelper = new XmlHelper();
+            
+            ExportCarSalesWithDiscNondiscPrices[] salesWithDiscount = context.Sales
+                .Select(s => new ExportCarSalesWithDiscNondiscPrices()
+                {
+                    CustomerName = s.Customer.Name,
+                    Price = s.Car.PartsCars.Sum(pc => pc.Part.Price).ToString("F2"),
+                    Discount = s.Discount.ToString("f2").EndsWith(".00") ? 
+                        String.Format("{0:0.##}", s.Discount) : s.Discount.ToString("f2"),
+                    PriceDiscounted = Math.Round(s.Car.PartsCars.Sum(pc => pc.Part.Price) - 
+                                       ( s.Car.PartsCars.Sum(pc => pc.Part.Price) * (s.Discount / 100)),4),
+                    Car = new ExportCardDTOEmbedded()
+                    {
+                        Make = s.Car.Make,
+                        Model = s.Car.Model,
+                        TraveledDistance = s.Car.TraveledDistance.ToString() 
+                    }
+                }).ToArray();
 
+            return xmlHelper.Serialize(salesWithDiscount, "sales");
+        }
 
         private static IMapper InitializeAutoMapper()
             => new Mapper(new MapperConfiguration(cfg =>
