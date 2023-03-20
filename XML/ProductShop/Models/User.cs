@@ -1,4 +1,6 @@
-﻿namespace ProductShop.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ProductShop.Models
 {
     using System.Collections.Generic;
 
@@ -6,8 +8,8 @@
     {
         public User()
         {
-            this.ProductsSold = new List<Product>();
-            this.ProductsBought = new List<Product>();
+            this.ProductsSold = new HashSet<Product>();
+            this.ProductsBought = new HashSet<Product>();
         }
 
         public int Id { get; set; }
@@ -18,7 +20,11 @@
 
         public int? Age { get; set; }
 
-        public ICollection<Product> ProductsSold { get; set; } = null!;
-        public ICollection<Product> ProductsBought { get; set; } = null!;
+        [InverseProperty(nameof(Product.Seller))]
+        public ICollection<Product> ProductsSold { get; set; }
+
+
+        [InverseProperty(nameof(Product.Buyer))]
+        public ICollection<Product> ProductsBought { get; set; }
     }
 }

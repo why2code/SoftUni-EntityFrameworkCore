@@ -20,11 +20,11 @@ namespace CarDealer
 
             using CarDealerContext context = new CarDealerContext();
 
-            //string inputXml =
-            //    File.ReadAllText("../../../Datasets/sales.xml");
-            //string result = ImportSales(context, inputXml);
+            string inputXml =
+                File.ReadAllText("../../../Datasets/sales.xml");
+            string result = ImportSales(context, inputXml);
 
-            string result = GetSalesWithAppliedDiscount(context);
+            //string result = GetSalesWithAppliedDiscount(context);
             Console.WriteLine(result);
 
            
