@@ -17,6 +17,7 @@ namespace ProductShop.Models
 
         public decimal Price { get; set; }
 
+
         [ForeignKey(nameof(Seller))]
         public int SellerId { get; set; }
         public User Seller { get; set; } 
@@ -24,7 +25,7 @@ namespace ProductShop.Models
 
         [ForeignKey(nameof(Buyer))]
         public int? BuyerId { get; set; }
-        public User Buyer { get; set; } 
+        public User? Buyer { get; set; } 
 
         public ICollection<CategoryProduct> CategoryProducts { get; set; }
     }
