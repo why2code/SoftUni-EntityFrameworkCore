@@ -320,10 +320,9 @@ namespace CarDealer
                 {
                     CustomerName = s.Customer.Name,
                     Price = s.Car.PartsCars.Sum(pc => pc.Part.Price).ToString("F2"),
-                    Discount = s.Discount.ToString("f2").EndsWith(".00") ? 
-                        String.Format("{0:0.##}", s.Discount) : s.Discount.ToString("f2"),
-                    PriceDiscounted = Math.Round(s.Car.PartsCars.Sum(pc => pc.Part.Price) - 
-                                       ( s.Car.PartsCars.Sum(pc => pc.Part.Price) * (s.Discount / 100)),4),
+                    Discount = s.Discount.ToString("f0"),
+                    PriceDiscounted = Math.Round((double)(s.Car.PartsCars.Sum(cp => cp.Part.Price) *
+                                       (1 - (s.Discount / 100))),4),
                     Car = new ExportCardDTOEmbedded()
                     {
                         Make = s.Car.Make,
