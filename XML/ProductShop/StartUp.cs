@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using Castle.DynamicProxy.Generators.Emitters.SimpleAST;
 using Microsoft.EntityFrameworkCore;
 using ProductShop.Data;
 using ProductShop.DTOs.Export;
@@ -18,7 +19,7 @@ namespace ProductShop
             //string inputXml = File.ReadAllText("../../../Datasets/categories-products.xml");
             //string result = ImportCategoryProducts(context, inputXml);
             
-            string result = GetSoldProducts(context);
+            string result = GetUsersWithProducts(context);
             Console.WriteLine(result);
 
         }
@@ -196,6 +197,7 @@ namespace ProductShop
 
         }
 
+
         // Problem 06
         public static string GetSoldProducts(ProductShopContext context)
         {
@@ -220,6 +222,67 @@ namespace ProductShop
            return xmlHelper.Serialize(exportUserDtos, "Users");
         }
 
+
+        // Problem 07
+        public static string GetCategoriesByProductsCount(ProductShopContext context)
+        {
+            XmlHelper xmlHelper = new XmlHelper();
+      
+            ExportCategoryDTO[] exportDtos = context.Categories
+                .OrderBy(c => c.Name)
+                .Include(c => c.CategoryProducts)
+                .ThenInclude(cp => cp.Product)
+                .Select(c => new ExportCategoryDTO()
+                {
+                    Name = c.Name,
+                    Count = c.CategoryProducts.Count(),
+                    AveragePrice = c.CategoryProducts.Average(p => p.Product.Price),
+                    TotalRevenue = c.CategoryProducts.Sum(p => p.Product.Price)
+                })
+                .OrderByDescending(cp => cp.Count)
+                .ThenBy(cp => cp.TotalRevenue)
+                .ToArray();
+
+            return xmlHelper.Serialize(exportDtos, "Categories");
+        }
+        
+
+        // Problem 08
+        public static string GetUsersWithProducts(ProductShopContext context)
+        {
+            XmlHelper xmlHelper = new XmlHelper();
+           
+            var usersAndProducts = context.Users
+                .ToArray() // fix for Exception InMemory Query Internal, Test 000_001
+                .Where(u => u.ProductsSold.Any())
+                .OrderByDescending(u => u.ProductsSold.Count)
+                .Take(10)
+                .Select(u => new ExportUsersIntoUsersCountDTO
+                {
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Age = string.IsNullOrEmpty(u.Age.ToString()) ? null : u.Age.ToString(),
+                    SoldProducts = new ExportSoldProductsDTO()
+                    {
+                        Count = u.ProductsSold.Count,
+                        Products = u.ProductsSold.Select(ps => new ExportProductsDTO
+                        {
+                            ProductName = ps.Name,
+                            Price = ps.Price,
+                        }).OrderByDescending(ps => ps.Price).ToArray()
+                    }
+                })
+                .ToArray();
+
+            //var result = new ExportUsersCountDTO
+            //{
+            //    Count = context.Users.Count(u => u.ProductsSold.Any()),
+            //    Users = usersAndProducts
+            //};
+
+            //return xmlHelper.Serialize(result, "Users");
+            throw new NotImplementedException("not implemented");
+        }
 
     }
 }
