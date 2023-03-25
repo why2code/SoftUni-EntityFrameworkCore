@@ -11,9 +11,9 @@ namespace CarDealer
         {
             CarDealerContext context = new CarDealerContext();
             string inputJson =
-                File.ReadAllText(@"../../../Datasets/suppliers.json");
+                File.ReadAllText(@"../../../Datasets/cars.json");
 
-            string resultOfImport = ImportSuppliers(context, inputJson);
+            string resultOfImport = ImportCars(context, inputJson);
             Console.WriteLine(resultOfImport);
 
         }
@@ -48,6 +48,104 @@ namespace CarDealer
 
             return $"Successfully imported {validSuppliers.Count()}.";
         }
+
+
+        // Problem 10
+        public static string ImportParts(CarDealerContext context, string inputJson)
+        {
+            ImportPartsDto[] partsDtos = JsonConvert.DeserializeObject<ImportPartsDto[]>(inputJson);
+            List<Part> validParts = new List<Part>();
+
+            foreach (var importPartsDto in partsDtos)
+            {
+                if (string.IsNullOrEmpty(importPartsDto.Name)
+                    || importPartsDto.Price.ToString() == null
+                    || importPartsDto.Quantity.ToString() == null
+                    )
+                {
+                    continue;
+                }
+
+                if (!context.Suppliers.Any(s => s.Id == importPartsDto.SupplierId))
+                {
+                    continue;
+                }
+
+                Part currentValidPart = new Part()
+                {
+                    Name = importPartsDto.Name,
+                    Price = importPartsDto.Price,
+                    Quantity = importPartsDto.Quantity,
+                    SupplierId = importPartsDto.SupplierId
+                };
+
+                validParts.Add(currentValidPart);
+            }
+
+            context.Parts.AddRange(validParts);
+            context.SaveChanges();
+
+            return $"Successfully imported {validParts.Count()}.";
+        }
+
+        // Problem 11
+        public static string ImportCars(CarDealerContext context, string inputJson)
+        {
+            ImportCarsdto[] carsDtos = JsonConvert.DeserializeObject<ImportCarsdto[]>(inputJson);
+            List<Car> validCars = new List<Car>();
+
+            foreach (var importCarsdto in carsDtos)
+            {
+                if (string.IsNullOrEmpty(importCarsdto.Make)
+                    || string.IsNullOrEmpty(importCarsdto.Model))
+                {
+                    continue;
+                }
+
+                //Check if the list of Parts (PartCar) in the JSON object is the same as list of Parts in DB
+
+
+                Car currentValidCar = new Car()
+                {
+                    Make = importCarsdto.Make,
+                    Model = importCarsdto.Model,
+                    TraveledDistance = importCarsdto.TraveledDistance
+                };
+
+                validCars.Add(currentValidCar);
+
+
+                var partIds = importCarsdto
+                    .Parts
+                    .Distinct()
+                    .ToList();
+
+                if (partIds == null)
+                {
+                    continue;
+                }
+
+                partIds.ForEach(pid =>
+                    {
+                        var currentPair = new PartCar()
+                        {
+                            Car = currentValidCar,
+                            PartId = pid
+                        };
+
+                        currentValidCar.PartsCars.Add(currentPair);
+                    }
+                );
+                
+            }
+
+            context.Cars.AddRange(validCars);
+            context.SaveChanges();
+
+            return $"Successfully imported {validCars.Count()}.";
+        }
+
+        // Problem 12
 
 
 

@@ -1,4 +1,7 @@
-﻿namespace CarDealer.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
+
+namespace CarDealer.Models
 {
     public class Car
     {
@@ -17,6 +20,11 @@
 
         public virtual ICollection<Sale> Sales { get; set; } = null!;
 
+        [JsonIgnore]
         public virtual ICollection<PartCar> PartsCars { get; set; } = null!;
+
+        
+        //[NotMapped]
+        //public decimal Price => this.PartsCars.Select(pc => pc.Part.Price).Sum();
     }
 }
