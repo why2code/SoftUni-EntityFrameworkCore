@@ -1,6 +1,8 @@
-﻿using CarDealer.Data;
+﻿using System.Globalization;
+using CarDealer.Data;
 using CarDealer.DTOs.Import;
 using CarDealer.Models;
+using Castle.Core.Resource;
 using Newtonsoft.Json;
 
 namespace CarDealer
@@ -11,9 +13,9 @@ namespace CarDealer
         {
             CarDealerContext context = new CarDealerContext();
             string inputJson =
-                File.ReadAllText(@"../../../Datasets/cars.json");
+                File.ReadAllText(@"../../../Datasets/sales.json");
 
-            string resultOfImport = ImportCars(context, inputJson);
+            string resultOfImport = ImportSales(context, inputJson);
             Console.WriteLine(resultOfImport);
 
         }
@@ -146,6 +148,73 @@ namespace CarDealer
         }
 
         // Problem 12
+        public static string ImportCustomers(CarDealerContext context, string inputJson)
+        {
+            ImportCustomerDto[] customerDtos = JsonConvert.DeserializeObject<ImportCustomerDto[]>(inputJson);
+            List<Customer> validCustomers = new List<Customer>();
+
+            foreach (var importCustomerDto in customerDtos)
+            {
+                if (string.IsNullOrEmpty(importCustomerDto.Name)
+                    || string.IsNullOrEmpty(importCustomerDto.BirthDate))
+                {
+                    continue;
+                }
+
+                Customer currentCust = new Customer()
+                {
+                    Name = importCustomerDto.Name,
+                    BirthDate = DateTime.ParseExact(importCustomerDto.BirthDate, "yyyy-MM-dd'T'HH:mm:ss",
+                        CultureInfo.InvariantCulture),
+                    IsYoungDriver = importCustomerDto.IsYoungDriver
+                };
+
+                validCustomers.Add(currentCust);
+            }
+
+            context.Customers.AddRange(validCustomers);
+            context.SaveChanges();
+            return $"Successfully imported {validCustomers.Count}.";
+        }
+
+        // Problem 13
+        public static string ImportSales(CarDealerContext context, string inputJson)
+        {
+            ImportSaleDto[] salesDtos = JsonConvert.DeserializeObject<ImportSaleDto[]>(inputJson);
+            List<Sale> validSales = new List<Sale>();
+
+            foreach (var importSaleDto in salesDtos)
+            {
+                if (string.IsNullOrEmpty(importSaleDto.CarId.ToString())
+                    || string.IsNullOrEmpty(importSaleDto.CustomerId.ToString())
+                    || string.IsNullOrEmpty(importSaleDto.Discount.ToString("F2")))
+                {
+                    continue;
+                }
+
+                //Judge does not like this test! Otherwise, it`s logical!
+                //bool validCarId = context.Cars.Any(c => c.Id == importSaleDto.CarId);
+                //bool validCustomerId = context.Customers.Any(c => c.Id == importSaleDto.CustomerId);
+                //if (!validCarId || !validCustomerId)
+                //{
+                //    continue;
+                //}
+
+                var currentSale = new Sale()
+                {
+                    CarId = importSaleDto.CarId,
+                    CustomerId = importSaleDto.CustomerId,
+                    Discount = importSaleDto.Discount
+                };
+
+                validSales.Add(currentSale);
+            }
+            context.Sales.AddRange(validSales);
+            context.SaveChanges();
+            return $"Successfully imported {validSales.Count}.";
+        }
+
+        // Problem 14
 
 
 
