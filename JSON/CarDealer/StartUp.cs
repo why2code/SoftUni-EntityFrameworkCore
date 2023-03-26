@@ -1,8 +1,10 @@
 ﻿using System.Globalization;
 using CarDealer.Data;
+using CarDealer.DTOs.Export;
 using CarDealer.DTOs.Import;
 using CarDealer.Models;
 using Castle.Core.Resource;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace CarDealer
@@ -12,10 +14,12 @@ namespace CarDealer
         public static void Main()
         {
             CarDealerContext context = new CarDealerContext();
-            string inputJson =
-                File.ReadAllText(@"../../../Datasets/sales.json");
+            //string inputJson =
+            //    File.ReadAllText(@"../../../Datasets/sales.json");
+            //string resultOfImport = ImportSales(context, inputJson);
 
-            string resultOfImport = ImportSales(context, inputJson);
+
+            string resultOfImport = GetLocalSuppliers(context);
             Console.WriteLine(resultOfImport);
 
         }
@@ -215,6 +219,60 @@ namespace CarDealer
         }
 
         // Problem 14
+        public static string GetOrderedCustomers(CarDealerContext context)
+        {
+            var customersToExport = context.Customers
+                .OrderBy(c => c.BirthDate)
+                .ThenBy(c => c.IsYoungDriver)
+                .Select(c => new ExportCustomerDto()
+                {
+                    Name = c.Name,
+                    BirthDate = c.BirthDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                    IsYoungDriver = c.IsYoungDriver
+                }).ToArray()
+                .ToArray();
+
+            return JsonConvert.SerializeObject(customersToExport, Formatting.Indented);
+        }
+
+        // Problem 15
+        public static string GetCarsFromMakeToyota(CarDealerContext context)
+        {
+            var exportToyotaCars = context.Cars
+                .Where(c => c.Make == "Toyota")
+                .AsNoTracking()
+                .OrderBy(c => c.Model)
+                .ThenByDescending(c => c.TraveledDistance)
+                .Select(c => new ExportCarsDto()
+                {
+                    Id = c.Id,
+                    Make = c.Make,
+                    Model = c.Model,
+                    TraveledDistance = c.TraveledDistance
+                })
+                .ToArray();
+
+            return JsonConvert.SerializeObject(exportToyotaCars, Formatting.Indented);
+        }
+
+        // Problem 16
+        public static string GetLocalSuppliers(CarDealerContext context)
+        {
+            var suppliersToExport = context.Suppliers
+                .Where(s => s.IsImporter == false)
+                .AsNoTracking()
+                .Select(s => new ExportSupplierDto()
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    PartsCount = s.Parts.Count()
+                }).ToArray()
+                .ToArray();
+
+            return JsonConvert.SerializeObject(suppliersToExport, Formatting.Indented);
+        }
+
+        // Problem 17
 
 
 
