@@ -5,7 +5,9 @@ using CarDealer.DTOs.Import;
 using CarDealer.Models;
 using Castle.Core.Resource;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace CarDealer
 {
@@ -15,11 +17,11 @@ namespace CarDealer
         {
             CarDealerContext context = new CarDealerContext();
             //string inputJson =
-            //    File.ReadAllText(@"../../../Datasets/sales.json");
-            //string resultOfImport = ImportSales(context, inputJson);
+            //    File.ReadAllText(@"../../../Datasets/cars.json");
+            //string resultOfImport = ImportCars(context, inputJson);
 
 
-            string resultOfImport = GetLocalSuppliers(context);
+            string resultOfImport = GetSalesWithAppliedDiscount(context);
             Console.WriteLine(resultOfImport);
 
         }
@@ -273,8 +275,89 @@ namespace CarDealer
         }
 
         // Problem 17
+        public static string GetCarsWithTheirListOfParts(CarDealerContext context)
+        {
+            var parts = context.Cars
+                .Include(c => c.PartsCars)
+                .ThenInclude(c => c.Part)
+                .Select(c => new 
+                {
+                    car = new 
+                    {
+                        Make = c.Make,
+                        Model = c.Model,
+                        TraveledDistance = c.TraveledDistance
+                    },
+                    parts = c.PartsCars.Select(p => new
+                       {
+                           Name = p.Part.Name,
+                           Price =  p.Part.Price.ToString("F2")
+                       }).ToArray()
+                    }).ToArray();
 
+            return JsonConvert.SerializeObject(parts, new JsonSerializerSettings()
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.None
+            });
+        }
 
+        // Problem 18
+        public static string GetTotalSalesByCustomer(CarDealerContext context)
+        {
+            //VS ERROR DUE TO CONVERSION (SUM AGGREGATE SUBQUERY, PASSES IN JUDGE)
+            var customers = context.Customers
+                .Include(c => c.Sales)
+                .ThenInclude(s => s.Car)
+                .ThenInclude(c => c.PartsCars)
+                .ThenInclude(pc => pc.Part)
+                .Where(c => c.Sales.Count >= 1)
+                .Select(x => new
+                {
+                    fullName = x.Name,
+                    boughtCars = x.Sales.Count,
+                    spentMoney = x.Sales.Sum(y => y.Car.PartsCars.Sum(z => z.Part.Price))
+                }).ToArray()
+                .OrderByDescending(sm => sm.spentMoney)
+                .ThenByDescending(bc => bc.boughtCars)
+                .ToArray();
+
+            var json = JsonConvert.SerializeObject(customers, new JsonSerializerSettings()
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented,
+                ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                }
+            });
+            return json;
+        }
+
+        // Problem 19
+        public static string GetSalesWithAppliedDiscount(CarDealerContext context)
+        {
+            var omfgShitBro = context.Sales
+                .Take(10)
+                .Select(s => new
+                {
+                    car = new
+                    {
+                        Make = s.Car.Make,
+                        Model = s.Car.Model,
+                        TraveledDistance = s.Car.TraveledDistance
+                    },
+                    customerName = s.Customer.Name,
+                    discount = s.Discount.ToString("f2"),
+                    price = s.Car.PartsCars.Sum(p => p.Part.Price).ToString("f2"),
+                    priceWithDiscount = (s.Car.PartsCars.Sum(p => p.Part.Price) 
+                                         - ((s.Car.PartsCars.Sum(p => p.Part.Price)) * (s.Discount / 100)))
+                                        .ToString("f2")
+                }).ToArray()
+                .ToArray();
+
+            return JsonConvert.SerializeObject(omfgShitBro, Formatting.Indented);
+        }
 
     }
 }
