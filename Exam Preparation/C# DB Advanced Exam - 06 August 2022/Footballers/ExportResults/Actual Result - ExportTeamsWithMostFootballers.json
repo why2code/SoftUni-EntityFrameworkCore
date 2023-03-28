@@ -125,28 +125,21 @@
     ]
   },
   {
-    "Name": "Tottenham Hotspur F.C.",
+    "Name": "Juventus F.C.",
     "Footballers": [
       {
-        "FootballerName": "Neymar",
-        "ContractStartDate": "06/10/2021",
-        "ContractEndDate": "02/04/2026",
-        "BestSkillType": "Dribble",
+        "FootballerName": "Lorenzo Pellegrini",
+        "ContractStartDate": "12/30/2021",
+        "ContractEndDate": "06/17/2024",
+        "BestSkillType": "Pass",
+        "PositionType": "Midfielder"
+      },
+      {
+        "FootballerName": "Martin Terrier",
+        "ContractStartDate": "12/29/2021",
+        "ContractEndDate": "06/16/2024",
+        "BestSkillType": "Pass",
         "PositionType": "Forward"
-      },
-      {
-        "FootballerName": "Lionel Messi",
-        "ContractStartDate": "03/21/2020",
-        "ContractEndDate": "07/04/2023",
-        "BestSkillType": "Dribble",
-        "PositionType": "Defender"
-      },
-      {
-        "FootballerName": "Wojiech Szczesny",
-        "ContractStartDate": "07/28/2020",
-        "ContractEndDate": "01/14/2023",
-        "BestSkillType": "Defence",
-        "PositionType": "Goalkeeper"
       }
     ]
   }

@@ -44,17 +44,19 @@ namespace Footballers.DataProcessor
                 .Select(t => new
                 {
                     Name = t.Name,
-                    Footballers = t.TeamsFootballers.Select(tfb => new
-                        {
-                            FootballerName = tfb.Footballer.Name,
-                            ContractStartDate = tfb.Footballer.ContractStartDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture),
-                            ContractEndDate = tfb.Footballer.ContractEndDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture),
-                            BestSkillType = tfb.Footballer.BestSkillType.ToString(),
-                            PositionType = tfb.Footballer.PositionType.ToString()
-                        }).OrderByDescending(t =>
-                            DateTime.ParseExact(t.ContractEndDate, "MM/dd/yyyy", CultureInfo.InvariantCulture))
-                        .ThenBy(n => n.FootballerName)
-                        .ToArray()
+                    Footballers = t.TeamsFootballers
+                                  .Where(tf => tf.Footballer.ContractStartDate >= date)
+                                  .OrderByDescending(tf => tf.Footballer.ContractEndDate)
+                                  .ThenBy(tf => tf.Footballer.Name)
+                                  .ToArray()
+                                  .Select(tfb => new
+                                        {
+                                            FootballerName = tfb.Footballer.Name,
+                                            ContractStartDate = tfb.Footballer.ContractStartDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture),
+                                            ContractEndDate = tfb.Footballer.ContractEndDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture),
+                                            BestSkillType = tfb.Footballer.BestSkillType.ToString(),
+                                            PositionType = tfb.Footballer.PositionType.ToString()
+                                        }).ToArray()
                 })
                 .OrderByDescending(m => m.Footballers.Count())
                 .ThenBy(t => t.Name)
