@@ -21,12 +21,12 @@ namespace Theatre.Data.Models
         [Required]
         [ForeignKey(nameof(Play))]
         public int PlayId { get; set; }
-        public Play Play { get; set; } = null!;
+        public virtual Play Play { get; set; } = null!;
 
 
         [Required]
         [ForeignKey(nameof(Theatre))]
         public int TheatreId { get; set; }
-        public Theatre Theatre { get; set; } = null!;
+        public virtual Theatre Theatre { get; set; } = null!;
     }
 }

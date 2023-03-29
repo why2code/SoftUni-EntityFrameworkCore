@@ -8,9 +8,9 @@ namespace Theatre.Data.Models.Enums
 {
     public enum Genre
     {
-        Drama,
-        Comedy,
-        Romance,
-        Musical
+        Drama = 0,
+        Comedy = 1,
+        Romance = 2,
+        Musical = 3
     }
 }
