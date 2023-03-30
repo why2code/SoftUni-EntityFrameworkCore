@@ -40,7 +40,7 @@ namespace TeisterMask.Data.Models
 
         public virtual Project Project { get; set; } = null!;
         
-        public virtual ICollection<EmployeeTask> EmployeesTasks { get;}
+        public virtual ICollection<EmployeeTask> EmployeesTasks { get; set; }
 
 
     }

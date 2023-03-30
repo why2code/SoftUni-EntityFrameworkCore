@@ -22,7 +22,7 @@ namespace TeisterMask.Data.Models
         [Required]
         public string Phone { get; set; } = null!;
 
-        public virtual ICollection<EmployeeTask> EmployeesTasks { get;}
+        public virtual ICollection<EmployeeTask> EmployeesTasks { get; set; }
 
     }
 }

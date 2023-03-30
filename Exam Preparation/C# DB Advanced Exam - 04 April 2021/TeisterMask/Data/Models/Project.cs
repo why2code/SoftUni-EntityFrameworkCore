@@ -19,6 +19,6 @@ namespace TeisterMask.Data.Models
 
         public DateTime? DueDate { get; set; }
 
-        public virtual ICollection<Task> Tasks { get;}
+        public virtual ICollection<Task> Tasks { get; set; }
     }
 }
